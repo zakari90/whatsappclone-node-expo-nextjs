@@ -17,7 +17,7 @@ expo-app/node_modules/
 expo-app/.env
 expo-app/dist/
 expo-app/web-build/
-
+nextjs-app/
 nextjs-app/.next/
 nextjs-app/node_modules/
 nextjs-app/out/
@@ -51,7 +51,7 @@ frontend/dev-dist
 
 git init
 git add .
-git remote add origin https://github.com/zakari90/whatsappclone-node-expo-nextjs.git
 git commit -m "first commit"
 git branch -M main
+git remote add origin https://github.com/zakari90/whatsappclone.git
 git push -u origin main
