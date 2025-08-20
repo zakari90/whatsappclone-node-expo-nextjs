@@ -48,3 +48,10 @@ frontend/dev-dist
 .env
 .env.local
 .env.production
+
+git init
+git add .
+git remote add origin https://github.com/zakari90/whatsappclone-node-expo-nextjs.git
+git commit -m "first commit"
+git branch -M main
+git push -u origin main
