@@ -32,3 +32,11 @@ frontend/dev-dist
 *.sln
 *.sw?
 .env
+
+
+git init
+git add .
+git remote add origin https://github.com/zakari90/whatsappclone-expo-nextjs-node.git
+git commit -m "first commit"
+git branch -M main
+git push -u origin main
