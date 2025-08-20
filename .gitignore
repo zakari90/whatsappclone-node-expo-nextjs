@@ -7,20 +7,32 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-expo-app/
-expo-chat-app-not-working
-expo-app/.expo
-expo-app/node_modules
+# Remove this line - it ignores your entire expo app
+# expo-app/
+
+# Specific directories to ignore
+expo-chat-app-not-working/
+expo-app/.expo/
+expo-app/node_modules/
 expo-app/.env
-nextjs-app/.next
-nextjs-app/node_modules
-server/node_modules
+expo-app/dist/
+expo-app/web-build/
+
+nextjs-app/.next/
+nextjs-app/node_modules/
+nextjs-app/out/
+nextjs-app/.env
+nextjs-app/.env.local
+
+server/node_modules/
 server/.env
+server/dist/
 
-
+# Build outputs
 dist-ssr
 *.local
 frontend/dev-dist
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -31,12 +43,8 @@ frontend/dev-dist
 *.njsproj
 *.sln
 *.sw?
+
+# Environment variables (global)
 .env
-
-
-git init
-git add .
-git remote add origin https://github.com/zakari90/whatsappclone-expo-nextjs-node.git
-git commit -m "first commit"
-git branch -M main
-git push -u origin main
+.env.local
+.env.production
