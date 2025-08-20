@@ -10,7 +10,7 @@ backend/node_modules
 node_modules
 frontend/node_modules
 frontend/dist
-
+expo-app/
 expo-chat-app-not-working
 expo-app/.expo
 expo-app/node_modules
