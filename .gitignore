@@ -6,17 +6,14 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
-backend/node_modules
-node_modules
-frontend/node_modules
-frontend/dist
+
 expo-app/
 expo-chat-app-not-working
 expo-app/.expo
 expo-app/node_modules
 expo-app/.env
-next-app/.next
-next-app/node_modules
+nextjs-app/.next
+nextjs-app/node_modules
 server/node_modules
 server/.env
 
