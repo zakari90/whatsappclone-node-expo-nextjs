@@ -1,101 +1,125 @@
-import { getLastMessageForUser } from '@/hooks/helpers';
-import { API_URL } from '@/hooks/requests';
-import { User, useUserStore } from '@/hooks/userStore';
-import { MaterialIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { getLastMessageForUser } from "@/hooks/helpers";
+import { resolveProfilePicture } from "@/hooks/utils";
+import { User, useUserStore } from "@/hooks/userStore";
+import { MaterialIcons, Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { useEffect, useState } from "react";
 import {
-  Alert,
   FlatList,
   Image,
-  Modal,
   Pressable,
   StatusBar,
   Text,
   TextInput,
   TouchableOpacity,
-  View
-} from 'react-native';
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function UsersScreen() {
-  const {
-    hydrated,
-    friends,
-    user,
-    messages
-  } = useUserStore();
+  const { hydrated, friends, user, messages, clearUser } = useUserStore();
 
-  const [searchQuery, setSearchQuery] = useState('');
+  const router = useRouter();
+  const [searchQuery, setSearchQuery] = useState("");
+  const insets = useSafeAreaInsets();
 
-  useEffect(() => {
-    
-    if (!hydrated) return;
+  const filteredFriends = friends.filter(
+    (friend) =>
+      friend._id !== user?._id &&
+      friend.username.toLowerCase().includes(searchQuery.toLowerCase().trim()),
+  );
 
-  }, [hydrated]);
+  const handleLogout = () => {
+    clearUser();
+    router.replace("/");
+  };
 
-
-    function handleSearch(friend: User) {
-    return friend.username.toLowerCase().includes(searchQuery.toLowerCase().trim());}
+  if (!hydrated) return null;
 
   return (
-    <View className=" m-2 flex-1 justify-center items-center ">
-      <StatusBar/>
-    <View className="w-full  max-w-md flex-row items-center justify-between p-4  min-h-32  ">
-        <Text className="text-lg font-semibold">{user?.username}</Text>
-        <Image
-        source={user?.profilePicture ? { uri: user.profilePicture.replace("http://localhost:8000", API_URL) } : require('@/assets/images/adaptive-icon.png')}
-          className="w-10 h-10 rounded-full bg-gray-600"
-        />
-      <PopUpModel/>
+    <View className="flex-1 bg-white" style={{ paddingTop: insets.top }}>
+      <StatusBar barStyle="dark-content" />
 
-    </View>        
-    <View className="w-full max-w-md relative m-2">
-          <MaterialIcons
-            className="absolute left-3 top-2 w-4 h-4"
-            name="search"
-            size={24}
-            color="black"
-          />
+      {/* Header */}
+      <View className="px-5 py-4 flex-row items-center justify-between border-b border-gray-100">
+        <Text className="text-2xl font-bold text-gray-900">Chats</Text>
+        <View className="flex-row items-center">
+          <TouchableOpacity
+            onPress={() => router.push("/(chat)/(tabs)/profile")}
+            className="mr-3"
+          >
+            <Image
+              source={
+                user?.profilePicture
+                  ? { uri: resolveProfilePicture(user.profilePicture) }
+                  : require("@/assets/images/adaptive-icon.png")
+              }
+              className="w-10 h-10 rounded-full bg-gray-100 border border-gray-200"
+            />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleLogout}>
+            <Ionicons name="log-out-outline" size={26} color="#ef4444" />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Search Bar */}
+      <View className="px-5 py-3">
+        <View className="flex-row items-center bg-gray-100 rounded-2xl px-3 py-2">
+          <Ionicons name="search-outline" size={20} color="#6b7280" />
           <TextInput
-            className="w-full p-2 pl-10 bg-gray-200 rounded-full"
-            placeholder="Search"
-            placeholderTextColor="#888"
+            className="flex-1 ml-2 text-base text-gray-900"
+            placeholder="Search conversations..."
+            placeholderTextColor="#9ca3af"
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
-        </View>
-        <View className="flex-1 w-full max-w-md ">
-          <FlatList 
-  className='p-2'
-  data={friends.filter((friend) => friend._id !== user?._id && handleSearch(friend))}
-  keyExtractor={(item) => item._id}
-  renderItem={({ item }) => {
-    
-    const lastMessage = getLastMessageForUser(item._id, messages, user?._id);
-
-    const unreadMessages = messages.filter( (msg) => msg.senderId === item._id && !msg.seen).length;
-
-    return (
-      <SimpleUserElement
-        selectedUser={item}
-        message={lastMessage}
-        unreadMessages={unreadMessages}
-      />
-    );
-  }}
-  showsVerticalScrollIndicator={false}
-  showsHorizontalScrollIndicator={false}
-/>
-
-          {friends.length === 0 && (
-            <Text className="text-center text-gray-500 mt-4">No users found</Text>
+          {searchQuery !== "" && (
+            <TouchableOpacity onPress={() => setSearchQuery("")}>
+              <Ionicons name="close-circle" size={18} color="#9ca3af" />
+            </TouchableOpacity>
           )}
         </View>
+      </View>
+
+      {/* User List */}
+      <FlatList
+        data={filteredFriends}
+        keyExtractor={(item) => item._id}
+        renderItem={({ item }) => {
+          const lastMessage = getLastMessageForUser(
+            item._id,
+            messages,
+            user?._id,
+          );
+          const unreadMessages = messages.filter(
+            (msg) => msg.senderId === item._id && !msg.seen,
+          ).length;
+
+          return (
+            <SimpleUserElement
+              selectedUser={item}
+              message={lastMessage}
+              unreadMessages={unreadMessages}
+            />
+          );
+        }}
+        ListEmptyComponent={
+          <View className="flex-1 items-center justify-center pt-20">
+            <Ionicons name="chatbubbles-outline" size={64} color="#e5e7eb" />
+            <Text className="text-gray-400 mt-4 text-lg">
+              {searchQuery ? "No results found" : "No active chats yet"}
+            </Text>
+          </View>
+        }
+        contentContainerStyle={{ paddingBottom: 20 }}
+        showsVerticalScrollIndicator={false}
+      />
     </View>
   );
 }
 
-export function SimpleUserElement({
+function SimpleUserElement({
   selectedUser,
   message,
   unreadMessages,
@@ -105,103 +129,60 @@ export function SimpleUserElement({
   unreadMessages: number;
 }) {
   const router = useRouter();
-  const { setCurrentReceiver, socket } = useUserStore();
- 
-  
-  const handlePress = () => {
+  const { setCurrentReceiver, socket, onlineUsers } = useUserStore();
+  const isOnline = onlineUsers.includes(selectedUser._id);
 
+  const handlePress = () => {
     setCurrentReceiver(selectedUser);
     socket?.emit("readMessage", { receiverId: selectedUser._id });
     router.replace(`/chat/${selectedUser._id}`);
-
   };
 
   return (
     <TouchableOpacity
-      activeOpacity={0.7}
-      className="flex-row items-center justify-between p-4 mt-2 bg-white rounded-lg shadow-md"
+      activeOpacity={0.6}
+      className="flex-row items-center px-5 py-3 border-b border-gray-50 active:bg-gray-50"
       onPress={handlePress}
     >
-      <View className="flex-row items-center w-full">
+      <View className="relative">
         <Image
-          source={selectedUser.profilePicture ? { uri: selectedUser.profilePicture.replace("http://localhost:8000", API_URL) } : require('@/assets/images/adaptive-icon.png')}
-          className="w-10 h-10 rounded-full bg-gray-600"
+          source={
+            selectedUser.profilePicture
+              ? { uri: resolveProfilePicture(selectedUser.profilePicture) }
+              : require("@/assets/images/adaptive-icon.png")
+          }
+          className="w-14 h-14 rounded-full bg-gray-100"
         />
-        <View className="ml-4 flex-row items-center justify-between align-middle w-5/6">
-          <View className="flex-1">  
-          <Text className="text-lg font-semibold">{selectedUser.username}</Text>
-          <Text className="text-sm text-gray-600">
-            {message ? message.length > 30 ? `${message.slice(0, 30)}...` : message : 'No messages yet'}
+        {/* Presence indicator */}
+        {isOnline && (
+          <View className="absolute bottom-0 right-1 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white" />
+        )}
+      </View>
+
+      <View className="flex-1 ml-4 py-1">
+        <View className="flex-row justify-between items-center">
+          <Text className="text-lg font-bold text-gray-900" numberOfLines={1}>
+            {selectedUser.username}
           </Text>
-          </View>
-          { unreadMessages >0 && (
-            <View className="w-6 h-6 rounded-full border-blue-800 bg-blue-500 border-2 items-center justify-center">
-              <Text className="text-xs text-white font-medium">{unreadMessages}</Text>
+          {unreadMessages > 0 && (
+            <View className="bg-blue-500 rounded-full px-1.5 py-0.5 min-w-[20px] items-center justify-center">
+              <Text className="text-[10px] text-white font-bold">
+                {unreadMessages}
+              </Text>
             </View>
           )}
+        </View>
+
+        <View className="flex-row justify-between items-center mt-0.5">
+          <Text
+            className={`text-sm flex-1 ${unreadMessages > 0 ? "text-gray-900 font-bold" : "text-gray-500"}`}
+            numberOfLines={1}
+          >
+            {message || "Tap to start chatting"}
+          </Text>
+          {/* Optional: Message time could go here if available */}
         </View>
       </View>
     </TouchableOpacity>
   );
 }
-
-
-export function PopUpModel() {
-  const [modalVisible, setModalVisible] = useState(false);
-  const { clearUser } = useUserStore();
-  const router = useRouter();
-  function handleLogout() {
-    try {
-    clearUser();
-    router.replace('/');
-    setModalVisible(false);
-      
-    } catch (error) {
-      console.error('Error during logout:', error);
-      Alert.alert('Logout Error', 'An error occurred while logging out. Please try again later.');
-      return;
-      
-    }
- 
-  }
- 
-  return (
- <View >
-        <Modal
-          animationType="slide"
-          transparent={true}
-          visible={modalVisible}
-          onRequestClose={() => {
-            Alert.alert('Modal has been closed.');
-            setModalVisible(!modalVisible);
-          }}>
-          <View className='flex-1 justify-center items-center bg-blue-300 bg-opacity-50'>
-            <View className=' max-w-md bg-blue-100 rounded-lg p-3 shadow-lg'>
-              <Text className=' font-bold text-center'>Are you sure you want to logout ? !</Text>
-    <View className='flex-row justify-around mt-4'>  
-
-              <Pressable
-                className=' p-3 rounded-lg'
-                onPress={() => setModalVisible(!modalVisible)}>
-                  <MaterialIcons name='cancel' size={24} color='blue' />              
-              </Pressable>
-              <Pressable
-                className='p-3 rounded-lg'
-                onPress={() => setModalVisible(!modalVisible)}>
-                  <MaterialIcons name='logout' size={24} color='red' />              
-              </Pressable>
-    </View>
-
-            </View>
-          </View>
-        </Modal>
-        <Pressable
-          className='rounded-lg'
-          onPress={() => handleLogout()}>
-          {/* <Text className='text-white font-bold text-center'>Show Modal</Text> */}
-          <MaterialIcons className='text-red-200 ' name='logout' size={24} color='red' />
-        </Pressable>
-      </View>
-  );
-}
-

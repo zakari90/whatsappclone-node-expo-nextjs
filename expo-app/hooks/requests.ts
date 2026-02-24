@@ -1,28 +1,35 @@
-import axios, { isAxiosError } from 'axios';
-import { RegisterFormData } from '@/app/(registration)/register';
-import { LoginFormData } from '@/app/(registration)';
-import * as FileSystem from 'expo-file-system';
-export const API_URL = "http://192.168.43.150:8000"
+import axios, { isAxiosError } from "axios";
+import { RegisterFormData } from "@/app/(registration)/register";
+import { LoginFormData } from "@/app/(registration)";
+import * as FileSystem from "expo-file-system";
+import { API_URL } from "@/constants/Config";
+export { API_URL };
 
-axios.defaults.baseURL = API_URL
+axios.defaults.baseURL = API_URL;
 
 export const webUploadImage = async (token: string | null, file: File) => {
-    const formData = new FormData();
-      formData.append('profilePicture', file);
+  const formData = new FormData();
+  formData.append("profilePicture", file);
 
-      await axios.post(`${API_URL}/user/updateprofilepicture`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          authorization: `bearer ${token}`,
-        },
-      });
+  const response = await axios.post(
+    `${API_URL}/user/updateprofilepicture`,
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+        authorization: `bearer ${token}`,
+      },
+    },
+  );
+  return response.data;
+};
 
-}
-
-
-export const mobileUploadImage = async (token: string | null, imageUri: string) => {
+export const mobileUploadImage = async (
+  token: string | null,
+  imageUri: string,
+) => {
   const response = await FileSystem.uploadAsync(
-    API_URL+`/user/updateprofilepicture`,
+    API_URL + `/user/updateprofilepicture`,
     imageUri,
     {
       httpMethod: "POST",
@@ -32,31 +39,39 @@ export const mobileUploadImage = async (token: string | null, imageUri: string) 
       uploadType: FileSystem.FileSystemUploadType.MULTIPART,
       fieldName: "profilePicture",
       mimeType: "image/jpeg",
-    }
+    },
   );
+
+  if (response.body) {
+    try {
+      return JSON.parse(response.body);
+    } catch (e) {
+      console.error("Failed to parse mobile upload response:", e);
+      return response;
+    }
+  }
   return response;
 };
 export const register = async (userData: RegisterFormData) => {
   console.log(userData);
-  
-    try {
-      
-        // const response = await axios.post("http://localhost:8000/user/register",data);
 
-        const response = await axios.post("/user/register",userData);
-        return response.data;
-    } catch (error) {
-        if (isAxiosError(error)) {
-            throw new Error(error.response?.data?.message || 'Registration failed');
-        }
-        throw new Error('An unexpected error occurred');
+  try {
+    // const response = await axios.post("http://localhost:8000/user/register",data);
+
+    const response = await axios.post("/user/register", userData);
+    return response.data;
+  } catch (error) {
+    if (isAxiosError(error)) {
+      throw new Error(error.response?.data?.message || "Registration failed");
     }
+    throw new Error("An unexpected error occurred");
+  }
 };
 
 export const login = async (userData: LoginFormData) => {
   try {
-    const response = await axios.post('/user/login', userData);
-    
+    const response = await axios.post("/user/login", userData);
+
     if (response.data.error) {
       return { error: response.data.error };
     }
@@ -64,33 +79,30 @@ export const login = async (userData: LoginFormData) => {
     return response.data;
   } catch (error) {
     if (isAxiosError(error)) {
-      throw new Error(error.response?.data?.message || 'Login failed');
+      throw new Error(error.response?.data?.message || "Login failed");
     }
-    throw new Error('An unexpected error occurred');
+    throw new Error("An unexpected error occurred");
   }
 };
 
+export const updateProfile = async (userData: any): Promise<any> => {
+  console.log("userData in updateProfile:", userData);
 
-export const updateProfile = async (
-  userData: any
-): Promise<any> => {
-  console.log('userData in updateProfile:', userData);
-  
   try {
     const { username, status, token } = userData;
 
     if (!token) {
-      return { success: false, error: 'No token provided' };
+      return { success: false, error: "No token provided" };
     }
 
     const response = await axios.post(
-      '/user/updateprofile',
+      "/user/updateprofile",
       { username, status },
       {
         headers: {
           authorization: `bearer ${token}`,
         },
-      }
+      },
     );
 
     if (response.data.error) {
@@ -100,23 +112,22 @@ export const updateProfile = async (
       };
     }
 
-    return {
-      success: true,
-      updatedUser: response.data,
-    };
+    return response.data;
   } catch (error) {
-    console.error('Error during profile update:', error);
+    console.error("Error during profile update:", error);
 
     if (isAxiosError(error)) {
       return {
         success: false,
-        error: error.response?.data?.message || 'An error occurred while updating the profile.',
+        error:
+          error.response?.data?.message ||
+          "An error occurred while updating the profile.",
       };
     }
 
     return {
       success: false,
-      error: 'Internal server error',
+      error: "Internal server error",
     };
   }
 };
@@ -133,66 +144,65 @@ export const updateProfile = async (
 //   }
 // };
 
-
 export const getUsers = async () => {
   try {
-    const userRes = await axios.get('/user');
+    const userRes = await axios.get("/user");
     const users = userRes.data;
 
     if (!users.success) {
-      console.log('Users error:', users.message);
-      throw new Error(users.message || 'Failed to fetch users');
+      console.log("Users error:", users.message);
+      throw new Error(users.message || "Failed to fetch users");
     }
 
     return users.friends;
   } catch (error) {
     if (isAxiosError(error)) {
-      console.error('Axios error:', error.response?.data || error.message);
-      throw new Error(error.response?.data?.message || 'Network error while fetching users');
+      console.error("Axios error:", error.response?.data || error.message);
+      throw new Error(
+        error.response?.data?.message || "Network error while fetching users",
+      );
     } else {
-      console.error('Unexpected error:', error);
-      throw new Error('An unexpected error occurred while fetching users');
+      console.error("Unexpected error:", error);
+      throw new Error("An unexpected error occurred while fetching users");
     }
   }
 };
 
-
 export const getMessages = async (token: string | null) => {
-  console.log('token in getMessages:', token);
-  
-  
+  console.log("token in getMessages:", token);
+
   if (!token) {
-    console.warn('No token provided');
+    console.warn("No token provided");
     return [];
   }
 
   try {
-    const messageRes = await axios.get('/message', {
-      headers:{
-              authorization: "bearer " + token
-          }
+    const messageRes = await axios.get("/message", {
+      headers: {
+        authorization: "bearer " + token,
+      },
     });
 
-    console.log('messages response:', messageRes.data);
-    
+    console.log("messages response:", messageRes.data);
 
     const messages = messageRes.data;
 
     if (!messages.success) {
-      console.error('Messages fetch error:', messages.message);
-      throw new Error(messages.message || 'Failed to fetch messages');
+      console.error("Messages fetch error:", messages.message);
+      throw new Error(messages.message || "Failed to fetch messages");
     }
 
     return messages.messages;
   } catch (error) {
     if (isAxiosError(error)) {
-      console.error('Axios error:', error.response?.data || error.message);
+      console.error("Axios error:", error.response?.data || error.message);
       throw new Error(
-        error.response?.data?.message || 'Network error while fetching messages'
+        error.response?.data?.message ||
+          "Network error while fetching messages",
       );
     } else {
-      console.error('Unexpected error:', error);
-      throw new Error('An unexpected error occurred while fetching messages');
+      console.error("Unexpected error:", error);
+      throw new Error("An unexpected error occurred while fetching messages");
     }
   }
 };
